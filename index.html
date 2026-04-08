@@ -28,7 +28,7 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
     
     <style>
         body {
@@ -47,20 +47,16 @@
             pointer-events: none;
         }
 
-        .mermaid {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            min-height: 200px;
-        }
-        
-        .mermaid svg {
-            max-width: 100% !important;
+        /* SVG Fix cho Safari */
+        #mermaid-container svg {
+            width: 100% !important;
             height: auto !important;
-            background: transparent !important;
+            max-width: 100%;
+            display: block;
         }
         
-        .mermaid .edgePath path {
+        /* Hiệu ứng Edge phát sáng */
+        .edgePath path {
             stroke: #f472b6 !important;
             stroke-width: 2px !important;
             animation: flowDash 20s linear infinite;
@@ -80,7 +76,7 @@
                 <i data-lucide="hexagon" class="text-violet-500 fill-violet-500/20 w-8 h-8"></i>
                 <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">VNeIN Architecture</span>
             </div>
-            <button class="bg-violet-600 text-white px-5 py-2 rounded-lg text-sm font-medium">Báo cáo LLD</button>
+            <button class="bg-violet-600 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-[0_0_15px_rgba(139,92,246,0.4)]">Báo cáo LLD</button>
         </div>
     </nav>
 
@@ -91,13 +87,13 @@
         <div class="relative z-10 text-center max-w-4xl">
             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-violet-500/30 bg-violet-500/10 mb-8">
                 <i data-lucide="shield-check" class="w-4 h-4 text-violet-400"></i>
-                <span class="text-sm font-medium text-violet-300">Chính Phủ Số 4.0</span>
+                <span class="text-sm font-medium text-violet-300">Chính Phủ Số 3.0</span>
             </div>
-            <h1 class="text-5xl md:text-7xl font-extrabold mb-6">
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-6 leading-tight">
                 Hạ Tầng Dữ Liệu <br />
                 <span class="bg-gradient-to-r from-violet-500 to-fuchsia-400 bg-clip-text text-transparent">Bảo Hiểm Quốc Gia</span>
             </h1>
-            <p class="text-lg text-gray-400 max-w-2xl mx-auto">Giải quyết triệt để sự phân mảnh thông tin, định hình kỷ nguyên quản trị an sinh xã hội dựa trên dữ liệu.</p>
+            <p class="text-lg text-gray-400 max-w-2xl mx-auto font-light">Giải quyết triệt để sự phân mảnh thông tin, định hình kỷ nguyên quản trị an sinh xã hội dựa trên dữ liệu.</p>
         </div>
     </section>
 
@@ -106,45 +102,15 @@
             <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Giải Phẫu 15 Phân Lớp</h2>
         </div>
 
-        <div class="bg-[#0a0a0a]/80 backdrop-blur-2xl border border-[#8b5cf6]/40 rounded-2xl p-4 md:p-10">
+        <div class="bg-[#0a0a0a]/80 backdrop-blur-2xl border border-[#8b5cf6]/40 rounded-2xl p-4 md:p-10 shadow-[0_0_40px_rgba(139,92,246,0.1)]">
             <div class="w-full overflow-x-auto">
-                <div class="mermaid">
-                    graph TD
-                    
-                    %% Định nghĩa Style Class
-                    classDef bgBase fill:#0a0a0a,stroke:#8b5cf6,stroke-width:1px,color:#fff,rx:8,ry:8;
-                    classDef highlight fill:#2e1065,stroke:#f472b6,stroke-width:2px,color:#fff,rx:8,ry:8;
-                    classDef external fill:#1f2937,stroke:#4b5563,stroke-dasharray: 5 5,stroke-width:1px,color:#ccc,rx:8,ry:8;
-
-                    subgraph LAYER1 [Nhóm Access & Control]
-                        direction TB
-                        A(VNeID / Định danh Cốt lõi) --> B(API Gateway perimeter)
-                    end
-
-                    subgraph LAYER2 [Business Hub - Điều phối Nghiệp vụ]
-                        direction TB
-                        B ==> C{Business Rule Engine}
-                        C <--> D(Consent Management / NĐ13)
-                    end
-
-                    subgraph LAYER3 [Data Hub & Core]
-                        direction TB
-                        C ==> E(Data Mapping & Transform)
-                        E <--> F[(Core Registry Layer)]
-                    end
-
-                    subgraph LAYER4 [Nhóm Đối tác & Hệ thống ngoài]
-                        direction LR
-                        E -.-> G[NDOP / Cơ sở Dữ liệu QG]
-                        E -.-> H[Doanh nghiệp Bảo hiểm]
-                        E -.-> I[TSP: Dịch vụ Chữ ký số/OCR]
-                    end
-
-                    %% Áp dụng Style
-                    class LAYER1,LAYER2,LAYER3 bgBase;
-                    class C,E highlight;
-                    class G,H,I external;
-                </div>
+                <div id="mermaid-container"></div>
+            </div>
+            
+            <div class="mt-10 flex flex-wrap justify-center gap-6 text-xs md:text-sm text-gray-400">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#2e1065] border border-[#f472b6] rounded-full"></span> Lõi Xử lý Tập trung</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#0a0a0a] border border-[#8b5cf6] rounded-full"></span> Hệ thống VNeIN</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#1f2937] border border-[#4b5563] border-dashed rounded-full"></span> Đối tác / External</div>
             </div>
         </div>
     </section>
@@ -156,7 +122,43 @@
     <script>
         lucide.createIcons();
 
-        // Cấu hình Mermaid tối ưu cho Safari iOS
+        // 1. Định nghĩa sơ đồ dưới dạng chuỗi JavaScript (Ngăn Safari format ký tự)
+        const graphDefinition = `
+graph TD
+    classDef bgBase fill:#0a0a0a,stroke:#8b5cf6,stroke-width:1px,color:#fff,rx:8,ry:8;
+    classDef highlight fill:#2e1065,stroke:#f472b6,stroke-width:2px,color:#fff,rx:8,ry:8;
+    classDef external fill:#1f2937,stroke:#4b5563,stroke-dasharray: 5 5,stroke-width:1px,color:#ccc,rx:8,ry:8;
+
+    subgraph LAYER1 [Nhóm Access & Control]
+        direction TB
+        A(VNeID / Định danh Cốt lõi) --> B(API Gateway perimeter)
+    end
+
+    subgraph LAYER2 [Business Hub - Điều phối Nghiệp vụ]
+        direction TB
+        B ==> C{Business Rule Engine}
+        C <--> D(Consent Management / NĐ13)
+    end
+
+    subgraph LAYER3 [Data Hub & Core]
+        direction TB
+        C ==> E(Data Mapping & Transform)
+        E <--> F[(Core Registry Layer)]
+    end
+
+    subgraph LAYER4 [Nhóm Đối tác & Hệ thống ngoài]
+        direction LR
+        E -.-> G[NDOP / Cơ sở Dữ liệu QG]
+        E -.-> H[Doanh nghiệp Bảo hiểm]
+        E -.-> I[TSP: Dịch vụ Chữ ký số/OCR]
+    end
+
+    class LAYER1,LAYER2,LAYER3 bgBase;
+    class C,E highlight;
+    class G,H,I external;
+        `;
+
+        // 2. Cấu hình Mermaid
         mermaid.initialize({ 
             startOnLoad: false, 
             securityLevel: 'loose',
@@ -176,18 +178,23 @@
             }
         });
 
-        // Đợi DOM và GPU sẵn sàng trước khi render sơ đồ
-        window.addEventListener('load', () => {
-            setTimeout(async () => {
-                try {
-                    await mermaid.run({ querySelector: '.mermaid' });
-                } catch (e) {
-                    console.error("Render error:", e);
-                }
-            }, 500);
-        });
+        // 3. Hàm render thủ công để cưỡng ép Safari hiển thị
+        async function renderGraph() {
+            const container = document.getElementById('mermaid-container');
+            try {
+                // Render trực tiếp vào một ID ảo 'graph-svg'
+                const { svg } = await mermaid.render('graph-svg', graphDefinition);
+                container.innerHTML = svg;
+            } catch (e) {
+                console.error("Lỗi render sơ đồ:", e);
+                // Fallback nếu có lỗi
+                container.innerHTML = "<p class='text-red-400'>Không thể hiển thị sơ đồ. Vui lòng tải lại trang.</p>";
+            }
+        }
 
-        // GSAP Particles
+        window.addEventListener('load', renderGraph);
+
+        // 4. GSAP Particles Engine (Giữ nguyên Visual)
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
         let width, height, particles = [];
@@ -205,7 +212,7 @@
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
                 this.radius = Math.random() * 2 + 0.5;
-                this.alpha = Math.random() * 0.5 + 0.1;
+                this.alpha = Math.random() * 0.4 + 0.1;
                 this.animX = this.x; this.animY = this.y;
             }
             draw() {
@@ -216,13 +223,13 @@
             }
         }
 
-        for (let i = 0; i < 60; i++) particles.push(new Particle());
+        for (let i = 0; i < 50; i++) particles.push(new Particle());
 
         particles.forEach(p => {
             gsap.to(p, {
-                animX: `+=${gsap.utils.random(-100, 100)}`,
-                animY: `+=${gsap.utils.random(-100, 100)}`,
-                duration: gsap.utils.random(5, 10),
+                animX: `+=${gsap.utils.random(-80, 80)}`,
+                animY: `+=${gsap.utils.random(-80, 80)}`,
+                duration: gsap.utils.random(4, 8),
                 repeat: -1, yoyo: true, ease: "sine.inOut"
             });
         });
