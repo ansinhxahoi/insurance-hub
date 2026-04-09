@@ -4,11 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VNeIN - Hạ Tầng Kiến Trúc Dữ Liệu</title>
+
     
+    
+    <!-- D3.js cho vẽ mạng lưới (Phân hệ 4, 8, 9) -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- Prism.js cho Code as Diagram (Phân hệ 5) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+
+    <!-- Google Fonts: Be Vietnam Pro -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -16,6 +28,7 @@
                 extend: {
                     colors: {
                         deepBlack: '#050505',
+                        glassBg: 'rgba(10, 10, 10, 0.8)',
                         primary: '#8b5cf6',
                     },
                     fontFamily: {
@@ -26,11 +39,79 @@
         }
     </script>
     
+    <!-- Thư viện -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     
     <style>
+        /* Ẩn Scrollbar cho Mobile Mockup để tạo cảm giác Native App */
+        .native-scroll {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .native-scroll::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+        
+        /* Chỉnh màu Google Map sang Dark Mode */
+        .dark-map {
+            filter: invert(90%) hue-rotate(180deg) brightness(110%) contrast(90%);
+        }
+        /* Bổ sung CSS cho Phân hệ 8 & 9 (D3.js Security & Fraud) */
+        .node.hacked circle { fill: #ef4444 !important; stroke: #b91c1c; filter: drop-shadow(0 0 15px rgba(239,68,68,0.9)); }
+        .node.fraud circle { fill: #f472b6 !important; stroke: #be185d; filter: drop-shadow(0 0 15px rgba(244,114,182,0.8)); }
+        .link.blocked { stroke: #ef4444; stroke-width: 2px; stroke-dasharray: 4,4; opacity: 0.8; animation: none; }
+        .link.fraud-link { stroke: #f472b6; stroke-width: 2px; opacity: 0.9; }
+
+        /* Bổ sung CSS cho Phân hệ 10 (Animated Data Flow) */
+        .flow-line {
+            stroke-dasharray: 6 6;
+            animation: flow-move 1.5s linear infinite;
+        }
+        .flow-line-reverse {
+            stroke-dasharray: 6 6;
+            animation: flow-move-reverse 1.5s linear infinite;
+        }
+        @keyframes flow-move {
+            from { stroke-dashoffset: 12; }
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes flow-move-reverse {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: 12; }
+        }
+        .pulse-core {
+            animation: pulse-shadow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-shadow {
+            0%, 100% { box-shadow: 0 0 15px rgba(139,92,246,0.3); border-color: rgba(139,92,246,0.5); }
+            50% { box-shadow: 0 0 35px rgba(139,92,246,0.8); border-color: rgba(139,92,246,1); }
+        }
+
+        /* Tuỳ chỉnh Prism.js Code block tiệp với Glassmorphism */
+        pre[class*="language-"] {
+            background: rgba(10, 10, 10, 0.6) !important;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 0.75rem;
+            margin: 0;
+            backdrop-filter: blur(10px);
+        }
+        code[class*="language-"], pre[class*="language-"] {
+            font-family: 'Courier New', Courier, monospace !important;
+            text-shadow: none !important;
+            font-size: 0.85rem;
+        }
+        /* D3.js classes */
+        .node circle { stroke: #8b5cf6; stroke-width: 2px; }
+        .node text { font-family: 'Be Vietnam Pro', sans-serif; font-size: 10px; fill: #d1d5db; }
+        .link { stroke: #4c1d95; stroke-width: 1.5px; opacity: 0.6; }
+        .link.active { stroke: #f472b6; stroke-width: 2px; opacity: 1; stroke-dasharray: 5,5; animation: dash 20s linear infinite; }
+        .link.bottleneck { stroke: #ef4444; stroke-width: 3px; opacity: 1; }
+        .node.bottleneck circle { fill: #ef4444 !important; stroke: #b91c1c; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8)); }
+        
+        @keyframes dash { to { stroke-dashoffset: -1000; } }
+
         body {
             background-color: #050505;
             color: #ffffff;
@@ -41,23 +122,25 @@
 
         #particle-canvas {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100vh;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
             z-index: 1;
             pointer-events: none;
         }
 
-        /* SVG Fix cho Safari */
-        #mermaid-container svg {
-            width: 100% !important;
-            height: auto !important;
+        /* Tinh chỉnh Mermaid CSS trên nền tối */
+        .mermaid svg {
             max-width: 100%;
-            display: block;
+            height: auto;
+            background: transparent !important;
+            font-family: 'Be Vietnam Pro', sans-serif;
         }
         
-        /* Hiệu ứng Edge phát sáng */
-        .edgePath path {
-            stroke: #f472b6 !important;
+        /* Hiệu ứng Edge (Đường dẫn) phát sáng trong sơ đồ Mermaid */
+        .mermaid .edgePath path {
+            stroke: #f472b6 !important; /* Fuchsia */
             stroke-width: 2px !important;
             animation: flowDash 20s linear infinite;
             stroke-dasharray: 10, 5;
@@ -70,150 +153,1004 @@
 </head>
 <body class="relative">
 
+    <!-- Thanh Điều Hướng (Navbar) -->
     <nav class="fixed top-0 w-full z-50 bg-[#050505]/70 backdrop-blur-md border-b border-[#8b5cf6]/20">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <i data-lucide="hexagon" class="text-violet-500 fill-violet-500/20 w-8 h-8"></i>
                 <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">VNeIN Architecture</span>
             </div>
-            <button class="bg-violet-600 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-[0_0_15px_rgba(139,92,246,0.4)]">Báo cáo LLD</button>
+            <div class="hidden md:flex space-x-8 text-sm font-semibold text-gray-400">
+                <a href="#vision" class="hover:text-fuchsia-400 transition-colors">Vision</a>
+                <a href="#framework" class="hover:text-fuchsia-400 transition-colors">Framework</a>
+                <a href="#architecture" class="hover:text-fuchsia-400 transition-colors">Layers</a>
+                <a href="#datamesh" class="hover:text-fuchsia-400 transition-colors">Data</a>
+                <a href="#vneid-wallet" class="hover:text-fuchsia-400 transition-colors text-violet-400">Wallet</a>
+            </div>
+            <button class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-all shadow-[0_0_15px_rgba(139,92,246,0.4)]">
+                HTC Holding
+            </button>
         </div>
     </nav>
 
+    <!-- Ánh sáng nền tổng thể -->
     <div class="fixed inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.15)_0%,rgba(5,5,5,1)_80%)] z-0 pointer-events-none"></div>
 
-    <section id="vision" class="relative min-h-screen flex items-center justify-center pt-20 px-4">
+    <!-- PHÂN HỆ 1: HERO SECTION -->
+    <section id="vision" class="relative min-h-screen flex items-center justify-center pt-20 pb-10 px-4 sm:px-6 lg:px-8">
         <canvas id="particle-canvas"></canvas>
-        <div class="relative z-10 text-center max-w-4xl">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-violet-500/30 bg-violet-500/10 mb-8">
-                <i data-lucide="shield-check" class="w-4 h-4 text-violet-400"></i>
-                <span class="text-sm font-medium text-violet-300">Chính Phủ Số 3.0</span>
+        <div class="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center">
+            
+            <div class="text-center max-w-4xl mb-16 space-y-6 mt-10">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-violet-500/30 bg-violet-500/10 backdrop-blur-sm mb-4">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-violet-400"></i>
+                    <span class="text-sm font-medium tracking-wide text-violet-300">Chính Phủ Số 4.0</span>
+                </div>
+                
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight">
+                    Hạ Tầng Dữ Liệu <br />
+                    <span class="bg-gradient-to-r from-violet-500 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-lg">
+                        Bảo Hiểm Quốc Gia
+                    </span>
+                </h1>
+                
+                <p class="text-lg md:text-xl text-gray-400 leading-relaxed font-light">
+                    Trục liên thông dữ liệu VNeIN giải quyết triệt để sự phân mảnh thông tin, định hình kỷ nguyên quản trị an sinh xã hội dựa trên dữ liệu (Data-driven governance).
+                </p>
             </div>
-            <h1 class="text-5xl md:text-7xl font-extrabold mb-6 leading-tight">
-                Hạ Tầng Dữ Liệu <br />
-                <span class="bg-gradient-to-r from-violet-500 to-fuchsia-400 bg-clip-text text-transparent">Bảo Hiểm Quốc Gia</span>
-            </h1>
-            <p class="text-lg text-gray-400 max-w-2xl mx-auto font-light">Giải quyết triệt để sự phân mảnh thông tin, định hình kỷ nguyên quản trị an sinh xã hội dựa trên dữ liệu.</p>
+
+            <!-- 3 Trụ cột -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+                <!-- Trụ cột 1 -->
+                <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/50 rounded-2xl p-8 relative overflow-hidden group transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_25px_rgba(139,92,246,0.3)]">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-violet-500/20 blur-2xl rounded-full"></div>
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-600/30 to-fuchsia-600/30 border border-violet-500/50 flex items-center justify-center mb-6">
+                        <i data-lucide="book-open" class="w-6 h-6 text-fuchsia-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Động lực Vĩ mô<br/><span class="text-violet-400 text-lg">Nghị quyết 57-NQ/TW</span></h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Khoa học công nghệ là đột phá. VNeIN là minh chứng kỹ thuật hiện thực hóa chủ trương, tạo động lực phát triển kinh tế số.</p>
+                </div>
+                <!-- Trụ cột 2 -->
+                <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/50 rounded-2xl p-8 relative overflow-hidden group transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_25px_rgba(139,92,246,0.3)]">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-violet-500/20 blur-2xl rounded-full"></div>
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-600/30 to-fuchsia-600/30 border border-violet-500/50 flex items-center justify-center mb-6">
+                        <i data-lucide="database" class="w-6 h-6 text-fuchsia-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Tài nguyên Lõi<br/><span class="text-violet-400 text-lg">Dữ liệu quốc gia</span></h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Nền tảng tuân thủ DRM, chia sẻ on-demand qua kiến trúc phân tán. Dữ liệu không là tài sản cục bộ mà là tài nguyên cốt lõi.</p>
+                </div>
+                <!-- Trụ cột 3 -->
+                <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/50 rounded-2xl p-8 relative overflow-hidden group transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_25px_rgba(139,92,246,0.3)]">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-violet-500/20 blur-2xl rounded-full"></div>
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-600/30 to-fuchsia-600/30 border border-violet-500/50 flex items-center justify-center mb-6">
+                        <i data-lucide="fingerprint" class="w-6 h-6 text-fuchsia-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Nguyên tắc OOP<br/><span class="text-violet-400 text-lg">Cung cấp 1 lần</span></h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Tích hợp sâu VNeID, triệt tiêu bất đối xứng thông tin. Zero-Trust với cơ chế Contextual Consent (Đồng thuận ngữ cảnh).</p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <section id="architecture" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20">
+    <!-- PHÂN HỆ 2: INTERACTIVE MATRIX (KHUNG KIẾN TRÚC 4.0) -->
+    <section id="framework" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Khung Kiến Trúc 4.0</h2>
+            <p class="text-gray-400 max-w-2xl mx-auto">Ánh xạ mức độ tương thích của nền tảng VNeIN với 5 mô hình tham chiếu cốt lõi theo Quyết định 292/QĐ-BKHCN.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- BRM -->
+            <div class="arch-card bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/30 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:border-[#8b5cf6]/80 hover:bg-[#8b5cf6]/5 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-100">Nghiệp vụ (BRM)</h3>
+                    <div class="p-2 bg-violet-500/10 rounded-md border border-violet-500/20"><i data-lucide="briefcase" class="w-5 h-5 text-violet-400"></i></div>
+                </div>
+                <p class="text-sm text-gray-400 mb-4 leading-relaxed">Phân tách rạch ròi lớp Business Hub. Chuẩn hóa vòng đời giao dịch từ khởi tạo đến bồi thường.</p>
+                <div class="accordion-content hidden text-sm text-gray-300 border-t border-violet-500/20 pt-4 leading-relaxed">
+                    Sử dụng Business Rule Engine (BRE) tập trung, cho phép điều phối các nghiệp vụ chéo mà không can thiệp sâu vào hệ thống lõi của các doanh nghiệp bảo hiểm. Hỗ trợ tự động hóa bồi thường (Zero-touch claims).
+                </div>
+                <button class="toggle-btn w-full text-center mt-2 pt-2 border-t border-transparent text-xs text-fuchsia-400 font-medium flex justify-center items-center gap-1 transition-colors">
+                    <span>Mở rộng luận giải</span> <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300 icon-arrow"></i>
+                </button>
+            </div>
+
+            <!-- DRM -->
+            <div class="arch-card bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/30 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:border-[#8b5cf6]/80 hover:bg-[#8b5cf6]/5 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-100">Dữ liệu (DRM)</h3>
+                    <div class="p-2 bg-violet-500/10 rounded-md border border-violet-500/20"><i data-lucide="database" class="w-5 h-5 text-violet-400"></i></div>
+                </div>
+                <p class="text-sm text-gray-400 mb-4 leading-relaxed">Xây dựng Data Hub, Core Registry Layer. Thiết lập cơ chế truy xuất dữ liệu on-demand từ nguồn gốc.</p>
+                <div class="accordion-content hidden text-sm text-gray-300 border-t border-violet-500/20 pt-4 leading-relaxed">
+                    Tuân thủ nguyên lý Quản trị Dữ liệu Chủ (MDM), tránh tạo bản sao vật lý phân tán, giúp hệ thống duy trì tính toàn vẹn (Source of Truth) trên toàn quốc thay vì lưu trữ tập trung dữ liệu thô.
+                </div>
+                <button class="toggle-btn w-full text-center mt-2 pt-2 border-t border-transparent text-xs text-fuchsia-400 font-medium flex justify-center items-center gap-1 transition-colors">
+                    <span>Mở rộng luận giải</span> <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300 icon-arrow"></i>
+                </button>
+            </div>
+
+            <!-- ARM -->
+            <div class="arch-card bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/30 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:border-[#8b5cf6]/80 hover:bg-[#8b5cf6]/5 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-100">Ứng dụng (ARM)</h3>
+                    <div class="p-2 bg-violet-500/10 rounded-md border border-violet-500/20"><i data-lucide="layout" class="w-5 h-5 text-violet-400"></i></div>
+                </div>
+                <p class="text-sm text-gray-400 mb-4 leading-relaxed">Mô hình Hub & Spoke, triển khai API Gateway, kiến trúc vi dịch vụ (Microservices).</p>
+                <div class="accordion-content hidden text-sm text-gray-300 border-t border-violet-500/20 pt-4 leading-relaxed">
+                    Giải quyết bài toán khóa trong (vendor lock-in) bằng chuẩn giao tiếp API mở. Sử dụng VNeID làm kênh truy cập định danh cốt lõi, tách biệt ứng dụng kênh và dịch vụ lõi.
+                </div>
+                <button class="toggle-btn w-full text-center mt-2 pt-2 border-t border-transparent text-xs text-fuchsia-400 font-medium flex justify-center items-center gap-1 transition-colors">
+                    <span>Mở rộng luận giải</span> <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300 icon-arrow"></i>
+                </button>
+            </div>
+
+            <!-- TRM -->
+            <div class="arch-card bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/30 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:border-[#8b5cf6]/80 hover:bg-[#8b5cf6]/5 shadow-lg lg:col-start-1 lg:col-end-2 md:translate-x-1/2 lg:translate-x-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-100">Công nghệ (TRM)</h3>
+                    <div class="p-2 bg-violet-500/10 rounded-md border border-violet-500/20"><i data-lucide="cpu" class="w-5 h-5 text-violet-400"></i></div>
+                </div>
+                <p class="text-sm text-gray-400 mb-4 leading-relaxed">Kiến trúc Hybrid Cloud, xử lý sự kiện bất đồng bộ, kết nối với Nền tảng quốc gia NDOP.</p>
+                <div class="accordion-content hidden text-sm text-gray-300 border-t border-violet-500/20 pt-4 leading-relaxed">
+                    VNeIN đóng vai trò là một LDOP (Local Data Orchestration Platform) kết nối trực tiếp với NDOP. Áp dụng Message Broker xử lý độ trễ và quản trị giao dịch phân tán.
+                </div>
+                <button class="toggle-btn w-full text-center mt-2 pt-2 border-t border-transparent text-xs text-fuchsia-400 font-medium flex justify-center items-center gap-1 transition-colors">
+                    <span>Mở rộng luận giải</span> <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300 icon-arrow"></i>
+                </button>
+            </div>
+
+            <!-- SRM -->
+            <div class="arch-card bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/30 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:border-[#8b5cf6]/80 hover:bg-[#8b5cf6]/5 shadow-lg lg:col-start-2 lg:col-end-3 md:translate-x-1/2 lg:translate-x-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-100">Bảo mật (SRM)</h3>
+                    <div class="p-2 bg-violet-500/10 rounded-md border border-violet-500/20"><i data-lucide="lock" class="w-5 h-5 text-violet-400"></i></div>
+                </div>
+                <p class="text-sm text-gray-400 mb-4 leading-relaxed">Bảo mật đa lớp, Zero-Trust, cơ chế Contextual Consent (NĐ 13) và mã hóa đầu cuối mTLS.</p>
+                <div class="accordion-content hidden text-sm text-gray-300 border-t border-violet-500/20 pt-4 leading-relaxed">
+                    Mọi giao dịch định tuyến qua xác thực VNeID. Hệ thống nội bộ không mặc định an toàn, áp dụng ABAC (Attribute-Based Access Control) và SOC giám sát dị thường 24/7.
+                </div>
+                <button class="toggle-btn w-full text-center mt-2 pt-2 border-t border-transparent text-xs text-fuchsia-400 font-medium flex justify-center items-center gap-1 transition-colors">
+                    <span>Mở rộng luận giải</span> <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300 icon-arrow"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- PHÂN HỆ 3: MERMAID 15 LAYER ARCHITECTURE -->
+    <section id="architecture" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20 mb-20">
         <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Giải Phẫu 15 Phân Lớp</h2>
+            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Kiến Trúc Tổng Thể</h2>
+            <p class="text-gray-400 max-w-3xl mx-auto">Sự phân tách rạch ròi giữa Trục điều phối nghiệp vụ (Business Hub) và Trục liên thông dữ liệu (Data Hub) là nguyên lý thiết kế sống còn để tránh thắt cổ chai hệ thống.</p>
         </div>
 
         <div class="bg-[#0a0a0a]/80 backdrop-blur-2xl border border-[#8b5cf6]/40 rounded-2xl p-4 md:p-10 shadow-[0_0_40px_rgba(139,92,246,0.1)]">
             <div class="w-full overflow-x-auto">
-                <div id="mermaid-container"></div>
+                <div class="mermaid flex justify-center">
+                    %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0a0a0a', 'primaryTextColor': '#e5e7eb', 'primaryBorderColor': '#8b5cf6', 'lineColor': '#f472b6', 'secondaryColor': '#2e1065', 'tertiaryColor': '#050505'}}}%%
+                    graph TD
+                    
+                    %% Khai báo class visual
+                    classDef bgBase fill:#0a0a0a,stroke:#8b5cf6,stroke-width:1px,color:#fff,rx:8,ry:8;
+                    classDef highlight fill:#2e1065,stroke:#f472b6,stroke-width:2px,color:#fff,rx:8,ry:8;
+                    classDef external fill:#1f2937,stroke:#4b5563,stroke-dasharray: 5 5,stroke-width:1px,color:#ccc,rx:8,ry:8;
+
+                    subgraph LAYER1 [Nhóm Access & Control]
+                        direction TB
+                        A(VNeID / Định danh Cốt lõi) --> B(API Gateway perimeter)
+                    end
+
+                    subgraph LAYER2 [Business Hub - Điều phối Nghiệp vụ]
+                        direction TB
+                        B ==> C{Business Rule Engine}
+                        C <--> D(Consent Management / NĐ13)
+                    end
+
+                    subgraph LAYER3 [Data Hub & Core]
+                        direction TB
+                        C ==> E(Data Mapping & Transform)
+                        E <--> F[(Core Registry Layer)]
+                    end
+
+                    subgraph LAYER4 [Nhóm Đối tác & Hệ thống ngoài]
+                        direction LR
+                        E -.-> G[NDOP / Cơ sở Dữ liệu QG]
+                        E -.-> H[Doanh nghiệp Bảo hiểm]
+                        E -.-> I[TSP: Dịch vụ Chữ ký số/OCR]
+                    end
+
+                    %% Áp dụng style
+                    class LAYER1,LAYER2,LAYER3 bgBase;
+                    class C,E highlight;
+                    class G,H,I external;
+                </div>
             </div>
             
-            <div class="mt-10 flex flex-wrap justify-center gap-6 text-xs md:text-sm text-gray-400">
-                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#2e1065] border border-[#f472b6] rounded-full"></span> Lõi Xử lý Tập trung</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#0a0a0a] border border-[#8b5cf6] rounded-full"></span> Hệ thống VNeIN</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#1f2937] border border-[#4b5563] border-dashed rounded-full"></span> Đối tác / External</div>
+            <div class="mt-8 flex flex-wrap justify-center gap-6 text-sm text-gray-400">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#2e1065] border border-[#f472b6] rounded-full inline-block"></span> Lõi Xử lý Tập trung</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#0a0a0a] border border-[#8b5cf6] rounded-full inline-block"></span> Hệ thống VNeIN</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#1f2937] border border-[#4b5563] border-dashed rounded-full inline-block"></span> Đối tác / External</div>
             </div>
         </div>
     </section>
 
-    <footer class="border-t border-violet-500/20 py-8 text-center text-gray-500 text-sm">
+    <!-- PHÂN HỆ 4: MÔ HÌNH HUB-AND-SPOKE VS DATA MESH -->
+    <section id="datamesh" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Mô Hình Phân Tán Có Điều Phối</h2>
+            <p class="text-gray-400 max-w-3xl mx-auto">So sánh năng lực xử lý giữa lưu trữ tập trung và kiến trúc Data Mesh (Dữ liệu tại nguồn) của VNeIN.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Trái: Hub & Spoke -->
+            <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/30 rounded-2xl p-6 relative">
+                <h3 class="text-lg font-bold text-gray-300 mb-2 text-center">Hub & Spoke (Truyền thống)</h3>
+                <p class="text-xs text-gray-500 text-center mb-4">Dữ liệu thô gom về một kho trung tâm, dễ gây thắt cổ chai.</p>
+                <div id="d3-hub-spoke" class="w-full h-[300px] bg-black/40 rounded-xl border border-violet-500/20 overflow-hidden"></div>
+            </div>
+
+            <!-- Phải: Data Mesh -->
+            <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/50 rounded-2xl p-6 relative shadow-[0_0_30px_rgba(139,92,246,0.15)]">
+                <div class="absolute top-4 right-4"><span class="px-2 py-1 text-[10px] font-bold bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30 rounded">VNeIN</span></div>
+                <h3 class="text-lg font-bold text-white mb-2 text-center">Phân Tán Điều Phối (Data Mesh)</h3>
+                <p class="text-xs text-gray-400 text-center mb-4">VNeIN chỉ định tuyến Request/API, dữ liệu lưu tại cơ sở gốc (OOP).</p>
+                <div id="d3-data-mesh" class="w-full h-[300px] bg-black/40 rounded-xl border border-fuchsia-500/30 overflow-hidden relative"></div>
+            </div>
+        </div>
+        
+        <div class="mt-8 flex justify-center">
+            <button id="btn-simulate-bottleneck" class="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(139,92,246,0.4)]">
+                <i data-lucide="play" class="w-4 h-4"></i> Chạy mô phỏng Tắc nghẽn
+            </button>
+        </div>
+    </section>
+
+    <!-- PHÂN HỆ 5: TRỤC LIÊN THÔNG NDOP & CHUẨN QCVN 09 -->
+    <section id="ndop-qcvn" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Chuẩn QCVN 09:2025/BCA & NDOP</h2>
+            <p class="text-gray-400 max-w-3xl mx-auto">Kiểm thử tính hợp lệ của gói tin (Payload Validation) qua môi trường sandbox.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#0a0a0a]/80 backdrop-blur-2xl border border-[#8b5cf6]/40 rounded-2xl p-6">
+            
+            <!-- Trái: Sơ đồ tương tác (Chiếm 5 cột) -->
+            <div class="lg:col-span-5 flex flex-col justify-center gap-6 border-r border-[#8b5cf6]/20 pr-0 lg:pr-6">
+                <div class="bg-black/50 border border-violet-500/30 rounded-xl p-4 text-center relative">
+                    <i data-lucide="server" class="w-8 h-8 text-violet-400 mx-auto mb-2"></i>
+                    <h4 class="font-bold text-white text-sm">VNeIN Data Hub</h4>
+                    <p class="text-[11px] text-gray-500">Khởi tạo Request truy xuất dữ liệu</p>
+                    
+                    <!-- Mũi tên kết nối -->
+                    <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                        <div class="h-6 w-px bg-fuchsia-500/50"></div>
+                        <i data-lucide="arrow-down" class="w-3 h-3 text-fuchsia-500"></i>
+                    </div>
+                </div>
+
+                <div class="bg-[#1f2937]/50 border border-gray-600 rounded-xl p-4 text-center mt-4 relative">
+                    <i data-lucide="database" class="w-8 h-8 text-blue-400 mx-auto mb-2"></i>
+                    <h4 class="font-bold text-white text-sm">NDOP (Trục QG)</h4>
+                    <p class="text-[11px] text-gray-500">Xác thực Token & Validate QCVN</p>
+                </div>
+
+                <button id="btn-validate" class="mt-4 bg-violet-600/20 hover:bg-violet-600/40 border border-violet-500/50 text-violet-300 py-2 rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition-colors">
+                    <i data-lucide="scan-line" class="w-4 h-4"></i> Bắt đầu Validate XSD
+                </button>
+            </div>
+
+            <!-- Phải: Code Editor (Chiếm 7 cột) -->
+            <div class="lg:col-span-7 relative group">
+                <div class="absolute top-0 right-0 bg-[#050505] border-b border-l border-[#8b5cf6]/30 px-3 py-1 rounded-bl-lg text-[10px] text-fuchsia-400 font-mono z-10">POST /api/v1/ndop/sync</div>
+                
+                <pre class="h-full"><code id="payload-code" class="language-json">
+{
+  "Header": {
+    "MessageID": "VNEIN-2026-9812A",
+    "Sender": "VNeIN_Hub",
+    "Receiver": "NDOP_Core",
+    "Timestamp": "2026-04-09T18:01:00Z"
+  },
+  "Body": {
+    "Subject": {
+      "CitizenID": "001099xxxxxx",
+      "ConsentToken": "eyJhbG...Q12"
+    },
+    "DataRequest": {
+      "Domain": "HealthInsurance",
+      "Action": "Read"
+    }
+  },
+  "Signature": "MEUCIQCd..."
+}
+                </code></pre>
+                
+                <!-- Terminal Output giả lập -->
+                <div id="validation-terminal" class="hidden absolute bottom-4 left-4 right-4 bg-black/90 border border-red-500/50 rounded p-3 text-xs font-mono">
+                    <div class="flex items-center gap-2 text-yellow-400 mb-1"><i data-lucide="loader" class="w-3 h-3 animate-spin"></i> Checking schema QCVN09:2025...</div>
+                    <div class="text-red-400 hidden error-log">> Lỗi cấu trúc: Trường 'Timestamp' sai định dạng ISO-8601 theo chuẩn BCA. Yêu cầu định dạng yyyy-MM-dd'T'HH:mm:ss.SSSXXX.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PHÂN HỆ 6: TRẢI NGHIỆM VÍ BẢO HIỂM SỐ (NATIVE APP MOCKUP) -->
+    <section id="vneid-wallet" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Ví Bảo Hiểm VNeID</h2>
+            <p class="text-gray-400 max-w-3xl mx-auto">Một tiện ích app-in-app dưới nền ứng dụng VNeID. Định danh 1 lần, quản lý toàn bộ hệ sinh thái Bảo hiểm Nhân thọ, Sức khỏe, Phi nhân thọ và Bồi thường tự động.</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row items-center justify-center gap-12">
+            
+            <!-- MOBILE MOCKUP FRAME -->
+            <div class="w-[340px] h-[700px] border-[10px] border-[#1a1a2e] rounded-[3rem] bg-[#050505] relative overflow-hidden shadow-[0_0_50px_rgba(139,92,246,0.25)] flex-shrink-0">
+                <!-- Camera Notch -->
+                <div class="absolute top-0 inset-x-0 h-7 bg-[#1a1a2e] rounded-b-3xl w-36 mx-auto z-50 flex justify-center items-center gap-2">
+                    <div class="w-12 h-1.5 bg-black/50 rounded-full"></div>
+                    <div class="w-2.5 h-2.5 bg-black/80 rounded-full border border-gray-800"></div>
+                </div>
+                
+                <!-- STATE 1: MÀN HÌNH ĐĂNG NHẬP -->
+                <div id="app-login" class="absolute inset-0 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#110820] to-[#050505] z-40 transition-all duration-500">
+                    <div class="w-20 h-20 bg-violet-600/20 rounded-3xl border border-violet-500/50 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+                        <i data-lucide="shield" class="w-10 h-10 text-fuchsia-400"></i>
+                    </div>
+                    <h3 class="text-white font-extrabold text-2xl tracking-tight mb-1">VNeID Wallet</h3>
+                    <p class="text-gray-400 text-xs mb-10 text-center">bt HTC Holding</p>
+                    
+                    <button id="btn-login" class="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(139,92,246,0.3)] transition-transform active:scale-95">
+                        <i data-lucide="fingerprint" class="w-5 h-5"></i> Đăng nhập SSO
+                    </button>
+                    <p class="text-[10px] text-gray-500 mt-6"><i data-lucide="lock" class="w-3 h-3 inline"></i> Bảo mật mã hóa</p>
+                </div>
+
+                <!-- STATE 2: MAIN DASHBOARD (NATIVE APP UX) -->
+                <div id="app-dashboard" class="absolute inset-0 bg-[#050505] opacity-0 pointer-events-none transition-opacity duration-500 flex flex-col z-30">
+                    
+                    <!-- Header chung -->
+                    <div class="px-5 pt-12 pb-4 flex justify-between items-center bg-[#0a0a0a]/95 backdrop-blur-md sticky top-0 z-20 border-b border-gray-800/50">
+                        <div class="flex items-center gap-3">
+                            <img src="https://ui-avatars.com/api/?name=Hieu+DITP&background=8b5cf6&color=fff" class="w-10 h-10 rounded-full border-2 border-violet-500" alt="Avatar">
+                            <div>
+                                <p class="text-[10px] text-gray-400">Định danh Mức 2,</p>
+                                <h4 class="text-white font-bold text-sm">NGUYỄN VĂN HIẾU <i data-lucide="badge-check" class="w-3 h-3 inline text-blue-400"></i></h4>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <i data-lucide="bell" class="w-5 h-5 text-gray-300"></i>
+                            <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-black"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- VÙNG HIỂN THỊ CÁC TAB (Khung nhìn chính) -->
+                    <div class="flex-1 relative overflow-hidden">
+                        
+                        <!-- TAB 1: TRANG CHỦ -->
+                        <div id="tab-home" class="absolute inset-0 overflow-y-auto native-scroll px-5 pb-24 pt-4 transition-opacity duration-300 z-10">
+                            <!-- Thẻ Tổng giá trị bảo vệ -->
+                            <div class="bg-gradient-to-br from-violet-900 to-[#1a0b2e] border border-violet-500/30 rounded-3xl p-5 mb-6 relative overflow-hidden shadow-[0_5px_20px_rgba(139,92,246,0.15)]">
+                                <div class="absolute -right-6 -top-6 bg-fuchsia-500/20 w-32 h-32 rounded-full blur-2xl"></div>
+                                <p class="text-white/70 text-[10px] font-medium mb-1">Tổng quỹ bảo vệ y tế & nhân thọ</p>
+                                <!-- Fix: Thu nhỏ font size để không tràn -->
+                                <h2 class="text-2xl font-extrabold text-white tracking-tight mb-4 truncate">3.500.000.000đ</h2>
+                                <div class="flex gap-2">
+                                    <span class="bg-black/40 border border-violet-500/30 px-2 py-1 rounded-lg text-[9px] text-violet-300 flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Tích hợp OOP</span>
+                                    <span class="bg-black/40 border border-green-500/30 px-2 py-1 rounded-lg text-[9px] text-green-400 flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3"></i> Bảo vệ 24/7</span>
+                                </div>
+                            </div>
+
+                            <!-- Quick Actions -->
+                            <div class="grid grid-cols-4 gap-2 mb-8">
+                                <div class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition-transform">
+                                    <div class="w-12 h-12 bg-[#1a1a1a] rounded-[14px] flex items-center justify-center border border-gray-800"><i data-lucide="scan-line" class="w-5 h-5 text-violet-400"></i></div>
+                                    <span class="text-[9px] text-gray-400 font-medium">QR Viện phí</span>
+                                </div>
+                                <div id="btn-open-buy" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition-transform">
+                                    <div class="w-12 h-12 bg-[#1a1a1a] rounded-[14px] flex items-center justify-center border border-gray-800"><i data-lucide="shopping-cart" class="w-5 h-5 text-fuchsia-400"></i></div>
+                                    <span class="text-[9px] text-gray-400 font-medium">Mua mới</span>
+                                </div>
+                                <div id="btn-quick-claim" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition-transform">
+                                    <div class="w-12 h-12 bg-[#1a1a1a] rounded-[14px] flex items-center justify-center border border-gray-800"><i data-lucide="file-text" class="w-5 h-5 text-blue-400"></i></div>
+                                    <span class="text-[9px] text-gray-400 font-medium">Bồi thường</span>
+                                </div>
+                                <div id="btn-open-map" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition-transform">
+                                    <div class="w-12 h-12 bg-[#1a1a1a] rounded-[14px] flex items-center justify-center border border-gray-800"><i data-lucide="map-pin" class="w-5 h-5 text-green-400"></i></div>
+                                    <span class="text-[9px] text-gray-400 font-medium">Cơ sở y tế</span>
+                                </div>
+                            </div>
+
+                            <!-- Gợi ý từ VNeIN -->
+                            <div class="flex justify-between items-end mb-3">
+                                <h5 class="text-sm font-bold text-white">Đề xuất từ VNeIN</h5>
+                                <span class="text-[9px] text-violet-400">Xem tất cả</span>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="bg-gradient-to-r from-[#1f0d20] to-[#0a0a0a] border border-fuchsia-500/20 p-3 rounded-2xl flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-fuchsia-500/20 rounded-xl flex items-center justify-center text-fuchsia-400"><i data-lucide="plane" class="w-5 h-5"></i></div>
+                                    <div class="flex-1">
+                                        <h6 class="text-xs font-bold text-gray-200">Bảo hiểm Du lịch Số</h6>
+                                        <p class="text-[9px] text-gray-500">Tự động bồi thường chậm chuyến bay</p>
+                                    </div>
+                                    <button class="bg-fuchsia-600/20 text-fuchsia-400 px-3 py-1.5 rounded-lg text-[9px] font-bold">Xem</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: HỢP ĐỒNG (Ví bảo hiểm) -->
+                        <div id="tab-policies" class="absolute inset-0 overflow-y-auto native-scroll px-5 pb-24 pt-4 transition-opacity duration-300 opacity-0 pointer-events-none z-0">
+                            <!-- Filter Tabs -->
+                            <div class="flex gap-2 overflow-x-auto native-scroll pb-2 mb-4 -mx-5 px-5">
+                                <button class="bg-violet-600 text-white px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap shrink-0">Tất cả (3)</button>
+                                <button class="bg-[#1a1a1a] border border-gray-800 text-gray-400 px-4 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0">Nhân thọ</button>
+                                <button class="bg-[#1a1a1a] border border-gray-800 text-gray-400 px-4 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0">Sức khỏe</button>
+                                <button class="bg-[#1a1a1a] border border-gray-800 text-gray-400 px-4 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0">Phi nhân thọ</button>
+                            </div>
+
+                            <h5 class="text-sm font-bold text-white mb-3">Ví hợp đồng của bạn</h5>
+                            <div class="space-y-3">
+                                <!-- Card: Nhân thọ -->
+                                <div class="policy-card bg-[#0f0f0f] border border-gray-800 rounded-2xl p-4 cursor-pointer">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-fuchsia-500/10 rounded-xl flex items-center justify-center text-fuchsia-400 border border-fuchsia-500/20"><i data-lucide="heart-handshake" class="w-5 h-5"></i></div>
+                                            <div>
+                                                <h6 class="text-white text-xs font-bold">An Tâm Toàn Diện</h6>
+                                                <p class="text-[10px] text-gray-500">Bảo Việt Life</p>
+                                            </div>
+                                        </div>
+                                        <span class="bg-green-500/20 text-green-400 text-[9px] font-bold px-2 py-0.5 rounded">Hiệu lực</span>
+                                    </div>
+                                    <div class="flex justify-between items-end">
+                                        <div>
+                                            <p class="text-[9px] text-gray-500">Số tiền bảo hiểm</p>
+                                            <p class="text-sm font-bold text-white">2.000.000.000đ</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card: Sức khỏe -->
+                                <div class="policy-card bg-[#0f0f0f] border border-gray-800 rounded-2xl p-4 cursor-pointer">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/20"><i data-lucide="shield-plus" class="w-5 h-5"></i></div>
+                                            <div>
+                                                <h6 class="text-white text-xs font-bold">VBI Care Premium</h6>
+                                                <p class="text-[10px] text-gray-500">Bảo hiểm VietinBank</p>
+                                            </div>
+                                        </div>
+                                        <span class="bg-green-500/20 text-green-400 text-[9px] font-bold px-2 py-0.5 rounded">Hiệu lực</span>
+                                    </div>
+                                    <div class="flex justify-between items-end">
+                                        <div>
+                                            <p class="text-[9px] text-gray-500">Hạn mức ngoại trú</p>
+                                            <p class="text-sm font-bold text-white">15.000.000đ/năm</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Card: BHYT -->
+                                <div class="policy-card bg-[#0f0f0f] border border-gray-800 rounded-2xl p-4 cursor-pointer">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 border border-blue-500/20"><i data-lucide="activity" class="w-5 h-5"></i></div>
+                                            <div>
+                                                <h6 class="text-white text-xs font-bold">BHYT Điện tử</h6>
+                                                <p class="text-[10px] text-gray-500">BHXH Việt Nam</p>
+                                            </div>
+                                        </div>
+                                        <span class="bg-green-500/20 text-green-400 text-[9px] font-bold px-2 py-0.5 rounded">Hiệu lực</span>
+                                    </div>
+                                </div>
+                            
+
+                                <!-- Card: BH TNDS Ô tô PVI -->
+                                <div class="policy-card bg-[#0f0f0f] border border-gray-800 rounded-2xl p-4 cursor-pointer hover:border-violet-500/50 transition-all active:scale-[0.98]">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 border border-orange-500/20"><i data-lucide="car" class="w-5 h-5"></i></div>
+                                            <div>
+                                                <h6 class="text-white text-xs font-bold">BH TNDS Ô tô Bắt buộc</h6>
+                                                <p class="text-[10px] text-gray-500">Bảo hiểm PVI</p>
+                                            </div>
+                                        </div>
+                                        <span class="bg-green-500/20 text-green-400 text-[9px] font-bold px-2 py-0.5 rounded">Hiệu lực</span>
+                                    </div>
+                                    <div class="flex justify-between items-end">
+                                        <div>
+                                            <p class="text-[9px] text-gray-500">Biển kiểm soát</p>
+                                            <p class="text-sm font-bold text-white">30K - 123.45</p>
+                                        </div>
+                                        <p class="text-[9px] text-violet-400 flex items-center gap-1">Chi tiết <i data-lucide="chevron-right" class="w-3 h-3"></i></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: BỒI THƯỜNG -->
+                        <div id="tab-claims" class="absolute inset-0 overflow-y-auto native-scroll px-5 pb-24 pt-4 transition-opacity duration-300 opacity-0 pointer-events-none z-0">
+                            <h5 class="text-sm font-bold text-white mb-4">Lịch sử Bồi thường (Toàn thời gian)</h5>
+                            
+                            <div class="relative border-l border-gray-800 ml-3 space-y-6">
+                                <!-- Lịch sử 1 -->
+                                <div class="relative pl-6">
+                                    <div class="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-green-500 rounded-full ring-4 ring-[#050505]"></div>
+                                    <div class="bg-[#111] border border-gray-800 p-3 rounded-xl">
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-xs font-bold text-white">Thanh toán Viện phí</span>
+                                            <span class="text-[10px] text-green-400">Hoàn tất</span>
+                                        </div>
+                                        <p class="text-[10px] text-gray-500 mb-2">Bảo hiểm VietinBank (VBI) • 12/03/2026</p>
+                                        <p class="text-sm font-bold text-gray-300">+ 1.250.000đ</p>
+                                    </div>
+                                </div>
+                                <!-- Lịch sử 2 -->
+                                <div class="relative pl-6">
+                                    <div class="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-yellow-500 rounded-full ring-4 ring-[#050505]"></div>
+                                    <div class="bg-[#111] border border-gray-800 p-3 rounded-xl">
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-xs font-bold text-white">Tai nạn xe cơ giới</span>
+                                            <span class="text-[10px] text-yellow-400">Đang giám định</span>
+                                        </div>
+                                        <p class="text-[10px] text-gray-500 mb-2">Bảo hiểm PVI • 05/04/2026</p>
+                                        <div class="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+                                            <div class="h-full bg-yellow-500 w-1/2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 4: CÁ NHÂN & CÀI ĐẶT ĐỒNG THUẬN -->
+                        <div id="tab-profile" class="absolute inset-0 overflow-y-auto native-scroll px-5 pb-24 pt-4 transition-opacity duration-300 opacity-0 pointer-events-none z-0">
+                            <div class="flex flex-col items-center mb-6">
+                                <img src="https://ui-avatars.com/api/?name=Hieu+DITP&background=8b5cf6&color=fff&size=128" class="w-20 h-20 rounded-full border-4 border-[#1a1a1a] shadow-lg mb-3" alt="Avatar">
+                                <h3 class="text-white font-bold text-lg">Nguyễn Văn Hiếu</h3>
+                                <p class="text-xs text-gray-500">ID: 001099xxxxxx</p>
+                            </div>
+
+                            <div class="bg-[#111] border border-gray-800 rounded-2xl overflow-hidden mb-4">
+                                <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 bg-violet-500/20 rounded-lg flex items-center justify-center text-violet-400"><i data-lucide="shield" class="w-4 h-4"></i></div>
+                                        <div>
+                                            <p class="text-sm text-white font-medium">Bảo mật & Định danh</p>
+                                            <p class="text-[10px] text-gray-500">Mức 2 (Sinh trắc học)</p>
+                                        </div>
+                                    </div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-600"></i>
+                                </div>
+                                <div class="p-4 flex justify-between items-center">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center text-green-400"><i data-lucide="lock" class="w-4 h-4"></i></div>
+                                        <div>
+                                            <p class="text-sm text-white font-medium">Cấp quyền dữ liệu (Consent 24/7)</p>
+                                            <p class="text-[10px] text-gray-500">Tự động chia sẻ</p>
+                                        </div>
+                                    </div>
+                                    <!-- Nút gạt Toggle -->
+                                    <div class="w-10 h-6 bg-green-500 rounded-full relative cursor-pointer shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+                                        <div class="w-4 h-4 bg-white rounded-full absolute right-1 top-1 shadow-sm"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="btn-logout" class="w-full bg-[#1a1a1a] text-red-400 font-bold py-3 rounded-xl border border-gray-800 text-sm active:scale-95 transition-transform mt-4">Đăng xuất VNeID</button>
+                        </div>
+                        
+                    </div>
+
+                    <!-- MÀN HÌNH PHỤ (SUB-SCREENS) - Ẩn mặc định, trượt từ phải sang -->
+                    <!-- Màn hình Bản đồ Y tế -->
+                    <div id="sub-map" class="absolute inset-0 bg-[#050505] z-30 transition-transform duration-300 translate-x-full flex flex-col">
+                        <div class="h-14 flex items-center px-4 border-b border-gray-800/50 bg-[#0a0a0a]">
+                            <!-- Đã bọc nút Back bằng thẻ button -->
+                            <button class="btn-close-sub p-2 -ml-2 active:scale-90 transition-transform"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
+                            <h4 class="text-white font-bold ml-2 text-sm">Cơ sở y tế liên thông</h4>
+                        </div>
+                        <div class="flex-1 bg-gray-900 relative">
+                            <!-- Bản đồ Google Maps Iframe (Dark mode filter) -->
+                            <iframe class="w-full h-full dark-map" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d119066.41709458467!2d105.7334005!3d21.022736!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab9bd9861ca1%3A0xe7887f7b72ca17a9!2zSMOgIE7hu5lpLCBWaeG7h3QgTmFt!5e0!3m2!1svi!2s!4v1700000000000!5m2!1svi!2s" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                            
+                            <!-- Bảng thông tin nổi trên map -->
+                            <div class="absolute bottom-6 left-4 right-4 bg-[#111]/90 backdrop-blur-md border border-gray-700 rounded-2xl p-4 shadow-xl">
+                                <h5 class="text-white font-bold text-sm mb-1">Bệnh viện ĐK Tâm Anh</h5>
+                                <p class="text-[10px] text-gray-400 mb-3"><i data-lucide="check-circle" class="w-3 h-3 inline text-green-400"></i> Hỗ trợ bảo lãnh viện phí VNeIN</p>
+                                <button class="w-full bg-violet-600 text-white text-xs font-bold py-2 rounded-lg">Chỉ đường</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Màn hình Mua mới -->
+                    <div id="sub-buy" class="absolute inset-0 bg-[#050505] z-30 transition-transform duration-300 translate-x-full flex flex-col">
+                        <div class="h-14 flex items-center px-4 border-b border-gray-800/50 bg-[#0a0a0a]">
+                            <!-- Đã bọc nút Back bằng thẻ button -->
+                            <button class="btn-close-sub p-2 -ml-2 active:scale-90 transition-transform"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
+                            <h4 class="text-white font-bold ml-2 text-sm">Danh mục Sản phẩm</h4>
+                        </div>
+                        <div class="flex-1 overflow-y-auto native-scroll p-5">
+                            <div class="bg-[#111] border border-gray-800 rounded-2xl p-4 mb-4 flex items-center gap-4">
+                                <div class="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center text-orange-400"><i data-lucide="car" class="w-6 h-6"></i></div>
+                                <div class="flex-1">
+                                    <h6 class="text-sm text-white font-bold">BH TNDS Ô tô</h6>
+                                    <p class="text-[10px] text-gray-500">Cấp ấn chỉ điện tử tức thì</p>
+                                </div>
+                            </div>
+                            <div class="bg-[#111] border border-gray-800 rounded-2xl p-4 flex items-center gap-4">
+                                <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400"><i data-lucide="heart-pulse" class="w-6 h-6"></i></div>
+                                <div class="flex-1">
+                                    <h6 class="text-sm text-white font-bold">BH Sức khỏe Toàn diện</h6>
+                                    <p class="text-[10px] text-gray-500">Khám chữa bệnh đa tuyến</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BOTTOM NAVIGATION -->
+                    <div class="absolute bottom-0 inset-x-0 h-[70px] bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-gray-800/80 flex justify-around items-center px-2 z-20 pb-2">
+                        <div class="nav-item active flex flex-col items-center gap-1 cursor-pointer w-16" data-target="tab-home">
+                            <i data-lucide="home" class="w-5 h-5 text-violet-400 fill-violet-500/20 icon-nav"></i>
+                            <span class="text-[9px] font-bold text-violet-400 text-nav">Trang chủ</span>
+                        </div>
+                        <div class="nav-item flex flex-col items-center gap-1 cursor-pointer w-16" data-target="tab-policies">
+                            <i data-lucide="layers" class="w-5 h-5 text-gray-500 icon-nav"></i>
+                            <span class="text-[9px] font-medium text-gray-500 text-nav">Hợp đồng</span>
+                        </div>
+                        <div class="nav-item flex flex-col items-center gap-1 cursor-pointer w-16" data-target="tab-claims">
+                            <i data-lucide="clipboard-list" class="w-5 h-5 text-gray-500 icon-nav"></i>
+                            <span class="text-[9px] font-medium text-gray-500 text-nav">Bồi thường</span>
+                        </div>
+                        <div class="nav-item flex flex-col items-center gap-1 cursor-pointer w-16" data-target="tab-profile">
+                            <i data-lucide="user" class="w-5 h-5 text-gray-500 icon-nav"></i>
+                            <span class="text-[9px] font-medium text-gray-500 text-nav">Cá nhân</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STATE 3: BOTTOM SHEET (Chi tiết hợp đồng) -->
+                <div id="bottom-sheet" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+                    <div class="absolute bottom-0 w-full bg-[#111] border-t border-gray-700 rounded-t-3xl transform translate-y-full transition-transform duration-300 ease-out flex flex-col max-h-[85%]" id="sheet-content">
+                        <div class="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mt-3 mb-4 cursor-pointer" id="btn-close-sheet"></div>
+                        <div class="px-5 pb-6 overflow-y-auto custom-scrollbar">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-12 h-12 bg-fuchsia-500/10 rounded-xl flex items-center justify-center text-fuchsia-400 border border-fuchsia-500/20"><i data-lucide="heart-handshake" class="w-6 h-6"></i></div>
+                                <div>
+                                    <h4 class="text-white font-bold text-base">An Tâm Toàn Diện</h4>
+                                    <p class="text-xs text-gray-500">Bảo Việt Life • Số: BV-99882</p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-[#1a1a1a] rounded-2xl p-4 border border-gray-800 mb-4">
+                                <p class="text-[10px] text-gray-500 mb-1">Người được bảo hiểm</p>
+                                <p class="text-sm text-white font-bold mb-4">Nguyễn Hiếu (001099xxxxxx)</p>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-[10px] text-gray-500">Phí định kỳ</p>
+                                        <p class="text-xs text-white font-bold">25.000.000đ/năm</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-gray-500">Ngày đáo hạn</p>
+                                        <p class="text-xs text-white font-bold">15/09/2040</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="w-full bg-violet-600/20 text-violet-400 border border-violet-500/30 py-3 rounded-xl font-bold text-sm mb-3">Tải Giấy chứng nhận (PDF)</button>
+                            <button class="w-full bg-[#1a1a1a] text-red-400 border border-gray-800 py-3 rounded-xl font-bold text-sm">Yêu cầu bồi thường (Claim)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Diễn giải bên phải -->
+            <div class="max-w-md space-y-6">
+                <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/30 rounded-xl p-6 hover:border-[#8b5cf6]/60 transition-colors">
+                    <h3 class="text-xl font-bold text-violet-300 mb-2 flex items-center gap-2"><i data-lucide="layout-grid" class="w-5 h-5"></i> End User Interface</h3>
+                    <p class="text-sm text-gray-400">Trải nghiệm người dùng tương đương các ứng dụng FinTech hàng đầu. Hỗ trợ hiển thị phân loại Nhân thọ, Phi nhân thọ, và BHYT trên cùng một giao diện.</p>
+                </div>
+                <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/30 rounded-xl p-6 hover:border-[#8b5cf6]/60 transition-colors">
+                    <h3 class="text-xl font-bold text-fuchsia-300 mb-2 flex items-center gap-2"><i data-lucide="layers" class="w-5 h-5"></i> Data Mesh Real-time</h3>
+                    <p class="text-sm text-gray-400">Khi người dùng click xem chi tiết thẻ, App mới gọi lệnh Request qua VNeIN Hub tới Core của Bảo Việt/PTI. Dữ liệu CÓ THỂ KHÔNG cần lưu cứng trên điện thoại.</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- PHÂN HỆ 7: CƠ CHẾ QUẢN TRỊ ĐỒNG THUẬN (DECREE 13) -->
+    <section id="consent-management" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Cơ chế bảo vệ Dữ liệu Cá nhân</h2>
+            <p class="text-gray-400 max-w-3xl mx-auto">Mô phỏng tuân thủ Nghị định 13/2023/NĐ-CP về Bảo vệ Dữ liệu Cá nhân. Mọi luồng truy xuất đều phải được chủ thể cấp quyền (Consent Token).</p>
+        </div>
+
+        <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/40 rounded-2xl p-8 max-w-3xl mx-auto text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-fuchsia-500/10 rounded-full blur-3xl -z-10"></div>
+            
+            <i data-lucide="file-warning" class="w-12 h-12 text-violet-400 mx-auto mb-4"></i>
+            <h3 class="text-xl font-bold text-white mb-2">Mô phỏng yêu cầu từ Đối tác</h3>
+            <p class="text-sm text-gray-400 mb-6">Bệnh viện Đa khoa Tâm Anh đang yêu cầu hệ thống VNeIN truy xuất "Lịch sử đóng BHYT" để làm thủ tục bảo lãnh viện phí.</p>
+            
+            <button id="btn-trigger-consent" class="bg-[#1f2937] hover:bg-[#374151] border border-violet-500/50 text-white px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 mx-auto">
+                <i data-lucide="send" class="w-4 h-4 text-violet-400"></i> Gửi Request truy xuất
+            </button>
+
+            <!-- Khung hiển thị Token sau khi cấp quyền -->
+            <div id="token-result" class="mt-8 hidden text-left bg-black/60 border border-green-500/30 rounded-lg p-4">
+                <div class="flex items-center gap-2 text-green-400 mb-2 font-bold text-sm">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Đã sinh Consent Token (JWT)
+                </div>
+                <code class="text-[10px] text-gray-300 break-all font-mono block">eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDEwOTk5OTk5OTkiLCJhdWQiOiJIT1NQSVRBTF9UQU1fQU5IIiwic2NvcGUiOiJyZWFkOmJoXHkiLCJleHAiOjE3MTI2NjAwMDB9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</code>
+            </div>
+        </div>
+    </section>
+
+    <!-- PHÂN HỆ 8: BẢO MẬT MẠNG LƯỚI & ZERO-TRUST -->
+    <section id="zero-trust" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Cơ chế bảo vệ hệ thống</h2>
+            <p class="text-gray-400 max-w-3xl mx-auto">Mô phỏng cơ chế xác thực. Hệ thống tự động từ chối giao tiếp từ các Node bị xâm nhập do thiếu chứng chỉ hợp lệ.</p>
+        </div>
+
+        <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/40 rounded-2xl p-6 relative shadow-[0_0_30px_rgba(139,92,246,0.15)] flex flex-col items-center">
+            <div id="d3-zero-trust" class="w-full h-[400px] bg-black/40 rounded-xl border border-violet-500/20 overflow-hidden relative">
+                <!-- Chú thích trạng thái -->
+                <div class="absolute top-4 left-4 flex flex-col gap-2 bg-black/60 p-3 rounded-lg border border-gray-700 text-xs text-gray-300 z-10">
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-violet-600"></span> Node an toàn (mTLS)</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500"></span> Node bị xâm nhập</div>
+                    <div class="flex items-center gap-2"><span class="w-4 h-0 border-t-2 border-dashed border-red-500"></span> Giao tiếp bị chặn (ABAC)</div>
+                </div>
+            </div>
+            
+            <button id="btn-simulate-attack" class="mt-6 bg-[#1f2937] hover:bg-red-900/50 border border-red-500/50 text-red-400 px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                <i data-lucide="crosshair" class="w-4 h-4"></i> Mô phỏng tấn công nội bộ (Lateral Movement)
+            </button>
+        </div>
+    </section>
+
+    <!-- PHÂN HỆ 9: TRÍ TUỆ DỮ LIỆU & BỒI THƯỜNG KHÔNG ĐIỂM CHẠM -->
+    <section id="data-intelligence" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Tri Thức Dữ Liệu & Tự Động Hóa</h2>
+            <p class="text-gray-400 max-w-3xl mx-auto">Xây dựng Knowledge Graph từ dữ liệu phân tán để phát hiện trục lợi bảo hiểm và vận hành quy trình bồi thường tự động (Zero-touch Claims).</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Đồ thị tri thức (Knowledge Graph) -->
+            <div class="lg:col-span-8 bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#8b5cf6]/40 rounded-2xl p-6 relative">
+                <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2"><i data-lucide="network" class="w-5 h-5 text-fuchsia-400"></i> Fraud Knowledge Graph</h3>
+                <div id="d3-knowledge-graph" class="w-full h-[350px] bg-black/50 rounded-xl border border-fuchsia-500/20 overflow-hidden"></div>
+                <button id="btn-detect-fraud" class="absolute bottom-10 right-10 bg-fuchsia-600/20 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 text-fuchsia-300 px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2">
+                    <i data-lucide="search" class="w-4 h-4"></i> Quét đồ thị dị thường
+                </button>
+            </div>
+
+            <!-- Quy trình Bồi thường -->
+            <div class="lg:col-span-4 flex flex-col gap-4">
+                <div class="bg-[#0a0a0a]/80 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 h-full">
+                    <h3 class="text-lg font-bold text-green-400 mb-6 flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5"></i> Luồng Zero-touch Claim</h3>
+                    
+                    <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-green-500/50 before:to-transparent">
+                        <!-- Bước 1 -->
+                        <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-full border border-green-500 bg-green-900/30 text-green-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"><i data-lucide="hospital" class="w-4 h-4"></i></div>
+                            <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-black/40 border border-gray-700 p-3 rounded-lg text-xs">Dữ liệu bệnh án điện tử (EMR) đẩy lên VNeIN Hub.</div>
+                        </div>
+                        <!-- Bước 2 -->
+                        <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-full border border-gray-600 bg-black text-gray-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"><i data-lucide="cpu" class="w-4 h-4"></i></div>
+                            <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-black/40 border border-gray-700 p-3 rounded-lg text-xs">AI Smart Contract tự động khớp rủi ro với Hợp đồng bảo hiểm.</div>
+                        </div>
+                        <!-- Bước 3 -->
+                        <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-full border border-gray-600 bg-black text-gray-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"><i data-lucide="banknote" class="w-4 h-4"></i></div>
+                            <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-black/40 border border-gray-700 p-3 rounded-lg text-xs">Cổng thanh toán tự động giải ngân thẳng vào tài khoản.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PHÂN HỆ 10: HẠ TẦNG ĐÁM MÂY HỖN HỢP (HYBRID CLOUD) - VERSION MỚI -->
+    <section id="hybrid-cloud" class="relative z-10 w-full max-w-7xl mx-auto py-24 px-4 border-t border-[#8b5cf6]/20 mb-20">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">Kiến Trúc Hạ Tầng Hỗn Hợp</h2>
+            <p class="text-gray-400 max-w-3xl mx-auto">Tối ưu hóa chi phí và hiệu năng. Core Data được bảo vệ nghiêm ngặt tại Private Cloud, trong khi Business Logic linh hoạt co giãn trên Public Cloud.</p>
+        </div>
+
+        <div class="relative w-full bg-[#0a0a0a]/80 backdrop-blur-2xl border border-[#8b5cf6]/30 rounded-[2.5rem] p-6 lg:p-12 shadow-[0_0_50px_rgba(139,92,246,0.15)] flex flex-col lg:flex-row items-stretch justify-between gap-8 lg:gap-0 overflow-hidden">
+            
+            <!-- Background Glows -->
+            <div class="absolute top-0 left-0 w-1/3 h-full bg-violet-900/10 blur-3xl rounded-full pointer-events-none"></div>
+            <div class="absolute top-0 right-0 w-1/3 h-full bg-fuchsia-900/10 blur-3xl rounded-full pointer-events-none"></div>
+
+            <!-- VÙNG 1: PRIVATE CLOUD (Bên trái) -->
+            <div class="lg:w-[40%] bg-black/60 border-2 border-violet-500/30 rounded-2xl p-6 relative group hover:border-violet-500/60 transition-all z-10">
+                <div class="absolute -top-3 left-6 bg-[#050505] px-3 font-bold text-violet-400 text-sm flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> Private Cloud (Tier III)
+                </div>
+                <p class="text-xs text-gray-500 mb-6 mt-2">TT Dữ liệu Quốc gia (NIC / BCA) - Phân khu cấm nối mạng Public.</p>
+                
+                <div class="space-y-4">
+                    <div class="pulse-core bg-[#110820] border border-violet-500/50 rounded-xl p-4 flex items-center gap-4 relative overflow-hidden">
+                        <div class="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center text-violet-400"><i data-lucide="database" class="w-5 h-5"></i></div>
+                        <div>
+                            <h4 class="text-white font-bold text-sm">Core Registry Layer</h4>
+                            <p class="text-[10px] text-gray-400">Master Data Management (MDM)</p>
+                        </div>
+                    </div>
+                    <div class="bg-[#0a0a0a] border border-gray-700 rounded-xl p-4 flex items-center gap-4 opacity-80">
+                        <div class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400"><i data-lucide="lock" class="w-5 h-5"></i></div>
+                        <div>
+                            <h4 class="text-gray-300 font-bold text-sm">Consent Store</h4>
+                            <p class="text-[10px] text-gray-500">Lưu trữ Ledger Cấp quyền truy xuất</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VÙNG 2: MẠCH DỮ LIỆU Ở GIỮA (Tunnel) -->
+            <div class="lg:w-[20%] flex flex-col items-center justify-center py-8 lg:py-0 relative z-0">
+                <div class="bg-[#050505] border border-[#8b5cf6]/40 px-4 py-2 rounded-full text-xs font-bold text-fuchsia-300 flex items-center gap-2 z-20 shadow-[0_0_20px_rgba(244,114,182,0.2)] mb-2">
+                    <i data-lucide="arrow-left-right" class="w-4 h-4"></i> mTLS Tunnel
+                </div>
+                <p class="text-[9px] text-gray-500 z-20 bg-[#050505] px-2 rounded">Mã hóa đầu cuối 256-bit</p>
+
+                <!-- SVG Mạch dữ liệu ngang (Desktop) -->
+                <svg class="hidden lg:block absolute inset-0 w-full h-full -z-10" preserveAspectRatio="none">
+                    <!-- Đường gửi đi -->
+                    <path d="M 0 40% C 30% 40%, 70% 30%, 100% 30%" fill="none" stroke="rgba(139,92,246,0.2)" stroke-width="3" />
+                    <path d="M 0 40% C 30% 40%, 70% 30%, 100% 30%" fill="none" stroke="#f472b6" stroke-width="3" class="flow-line" />
+                    
+                    <!-- Đường trả về -->
+                    <path d="M 0 70% C 30% 70%, 70% 80%, 100% 80%" fill="none" stroke="rgba(139,92,246,0.2)" stroke-width="3" />
+                    <path d="M 0 70% C 30% 70%, 70% 80%, 100% 80%" fill="none" stroke="#8b5cf6" stroke-width="3" class="flow-line-reverse" />
+                </svg>
+
+                <!-- SVG Mạch dữ liệu dọc (Mobile) -->
+                <svg class="block lg:hidden absolute inset-0 w-full h-full -z-10" preserveAspectRatio="none">
+                    <line x1="40%" y1="0" x2="40%" y2="100%" stroke="rgba(139,92,246,0.2)" stroke-width="2" />
+                    <line x1="40%" y1="0" x2="40%" y2="100%" stroke="#f472b6" stroke-width="2" class="flow-line" />
+                    
+                    <line x1="60%" y1="0" x2="60%" y2="100%" stroke="rgba(139,92,246,0.2)" stroke-width="2" />
+                    <line x1="60%" y1="0" x2="60%" y2="100%" stroke="#8b5cf6" stroke-width="2" class="flow-line-reverse" />
+                </svg>
+            </div>
+
+            <!-- VÙNG 3: PUBLIC CLOUD (Bên phải) -->
+            <div class="lg:w-[40%] bg-black/40 border border-fuchsia-500/30 border-dashed rounded-2xl p-6 relative group hover:bg-fuchsia-900/5 transition-all z-10">
+                <div class="absolute -top-3 right-6 bg-[#050505] px-3 font-bold text-fuchsia-400 text-sm flex items-center gap-2">
+                    <i data-lucide="cloud-lightning" class="w-4 h-4"></i> Public Cloud (Auto-Scale)
+                </div>
+                <p class="text-xs text-gray-500 mb-6 mt-2 text-right">Hạ tầng AWS / Viettel Cloud - Tự động nhân bản Node khi Traffic tăng đột biến.</p>
+
+                <div class="space-y-4">
+                    <div class="bg-[#1f0d20] border border-fuchsia-500/40 rounded-xl p-4 flex items-center gap-4 relative">
+                        <!-- Mô phỏng Load Balancer Metric -->
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 flex gap-1 items-end h-6 opacity-60">
+                            <div class="w-1.5 h-3 bg-fuchsia-400 rounded-t animate-pulse"></div>
+                            <div class="w-1.5 h-5 bg-fuchsia-400 rounded-t animate-pulse delay-75"></div>
+                            <div class="w-1.5 h-4 bg-fuchsia-400 rounded-t animate-pulse delay-150"></div>
+                            <div class="w-1.5 h-6 bg-fuchsia-400 rounded-t animate-pulse delay-300"></div>
+                        </div>
+                        <div class="w-10 h-10 bg-fuchsia-500/20 rounded-lg flex items-center justify-center text-fuchsia-400"><i data-lucide="network" class="w-5 h-5"></i></div>
+                        <div>
+                            <h4 class="text-white font-bold text-sm">API Gateway & Load Balancer</h4>
+                            <p class="text-[10px] text-gray-400">Xử lý 10,000+ RPS từ các Cty Bảo hiểm</p>
+                        </div>
+                    </div>
+                    <div class="bg-[#0a0a0a] border border-gray-700 rounded-xl p-4 flex items-center gap-4 opacity-80">
+                        <div class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400"><i data-lucide="cpu" class="w-5 h-5"></i></div>
+                        <div>
+                            <h4 class="text-gray-300 font-bold text-sm">Business Hub (Microservices)</h4>
+                            <p class="text-[10px] text-gray-500">Chạy logic nghiệp vụ, Rule Engine</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- MODAL ĐỒNG THUẬN (Ẩn mặc định, z-index cao nhất) -->
+    <div id="consent-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-[#0a0a0a] border border-[#8b5cf6]/60 rounded-2xl p-6 w-11/12 max-w-md shadow-[0_0_50px_rgba(139,92,246,0.3)] transform scale-95 transition-transform duration-300" id="consent-modal-box">
+            <div class="flex items-center gap-3 mb-4 border-b border-gray-800 pb-4">
+                <div class="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center text-red-400"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+                <div>
+                    <h4 class="text-white font-bold text-lg leading-tight">Yêu cầu cấp quyền</h4>
+                    <p class="text-xs text-gray-400">Xác thực qua VNeID</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3 text-sm text-gray-300 mb-6">
+                <p><strong>Bệnh viện ĐK Tâm Anh</strong> muốn truy cập dữ liệu của bạn:</p>
+                <ul class="list-disc pl-5 text-fuchsia-300 space-y-1 text-xs">
+                    <li>Trạng thái thẻ BHYT</li>
+                    <li>Lịch sử khám chữa bệnh (3 tháng gần nhất)</li>
+                </ul>
+                <div class="bg-violet-900/30 border border-violet-500/30 p-2 rounded text-xs text-violet-200 mt-2">
+                    <i data-lucide="clock" class="w-3 h-3 inline"></i> Token uỷ quyền chỉ có hiệu lực trong <strong>30 phút</strong>.
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="btn-deny" class="flex-1 py-2.5 rounded-lg border border-gray-600 text-gray-300 font-medium hover:bg-gray-800 transition-colors text-sm">Từ chối</button>
+                <button id="btn-accept" class="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold shadow-[0_0_15px_rgba(139,92,246,0.4)] transition-all text-sm flex justify-center items-center gap-2">
+                    <i data-lucide="fingerprint" class="w-4 h-4"></i> Chấp thuận
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- FOOTER -->
+    <footer class="border-t border-violet-500/20 bg-black/50 py-8 text-center text-gray-500 text-sm">
         <p>Kiến trúc thiết kế phục vụ Đề án Chính phủ Số 4.0 - DITP</p>
     </footer>
 
+    <!-- Khởi tạo JS & GSAP -->
     <script>
+        // 1. Khởi tạo Icons
         lucide.createIcons();
 
-        // 1. Định nghĩa sơ đồ dưới dạng chuỗi JavaScript (Ngăn Safari format ký tự)
-        const graphDefinition = `
-graph TD
-    classDef bgBase fill:#0a0a0a,stroke:#8b5cf6,stroke-width:1px,color:#fff,rx:8,ry:8;
-    classDef highlight fill:#2e1065,stroke:#f472b6,stroke-width:2px,color:#fff,rx:8,ry:8;
-    classDef external fill:#1f2937,stroke:#4b5563,stroke-dasharray: 5 5,stroke-width:1px,color:#ccc,rx:8,ry:8;
-
-    subgraph LAYER1 [Nhóm Access & Control]
-        direction TB
-        A(VNeID / Định danh Cốt lõi) --> B(API Gateway perimeter)
-    end
-
-    subgraph LAYER2 [Business Hub - Điều phối Nghiệp vụ]
-        direction TB
-        B ==> C{Business Rule Engine}
-        C <--> D(Consent Management / NĐ13)
-    end
-
-    subgraph LAYER3 [Data Hub & Core]
-        direction TB
-        C ==> E(Data Mapping & Transform)
-        E <--> F[(Core Registry Layer)]
-    end
-
-    subgraph LAYER4 [Nhóm Đối tác & Hệ thống ngoài]
-        direction LR
-        E -.-> G[NDOP / Cơ sở Dữ liệu QG]
-        E -.-> H[Doanh nghiệp Bảo hiểm]
-        E -.-> I[TSP: Dịch vụ Chữ ký số/OCR]
-    end
-
-    class LAYER1,LAYER2,LAYER3 bgBase;
-    class C,E highlight;
-    class G,H,I external;
-        `;
-
-        // 2. Cấu hình Mermaid
-        mermaid.initialize({ 
-            startOnLoad: false, 
-            securityLevel: 'loose',
-            fontFamily: 'Be Vietnam Pro',
-            theme: 'base',
-            themeVariables: {
-                primaryColor: '#0a0a0a',
-                primaryTextColor: '#e5e7eb',
-                primaryBorderColor: '#8b5cf6',
-                lineColor: '#f472b6',
-                secondaryColor: '#2e1065',
-                tertiaryColor: '#050505',
-                mainBkg: '#0a0a0a',
-                nodeBorder: '#8b5cf6',
-                clusterBkg: 'rgba(139, 92, 246, 0.05)',
-                clusterBorder: '#8b5cf6'
-            }
+        // 2. JS cho Accordion (Phân hệ 2 - Khung kiến trúc)
+        document.querySelectorAll('.arch-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const content = card.querySelector('.accordion-content');
+                const icon = card.querySelector('.icon-arrow');
+                const btnSpan = card.querySelector('.toggle-btn span');
+                
+                // Toggle ẩn/hiện mượt mà
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    content.classList.add('block', 'animate-fade-in');
+                    icon.style.transform = 'rotate(180deg)';
+                    btnSpan.textContent = 'Thu gọn';
+                } else {
+                    content.classList.add('hidden');
+                    content.classList.remove('block', 'animate-fade-in');
+                    icon.style.transform = 'rotate(0deg)';
+                    btnSpan.textContent = 'Mở rộng luận giải';
+                }
+            });
         });
 
-        // 3. Hàm render thủ công để cưỡng ép Safari hiển thị
-        async function renderGraph() {
-            const container = document.getElementById('mermaid-container');
-            try {
-                // Render trực tiếp vào một ID ảo 'graph-svg'
-                const { svg } = await mermaid.render('graph-svg', graphDefinition);
-                container.innerHTML = svg;
-            } catch (e) {
-                console.error("Lỗi render sơ đồ:", e);
-                // Fallback nếu có lỗi
-                container.innerHTML = "<p class='text-red-400'>Không thể hiển thị sơ đồ. Vui lòng tải lại trang.</p>";
-            }
-        }
+        // 3. Cấu hình Mermaid JS (Phân hệ 3)
+        mermaid.initialize({ 
+            startOnLoad: true,
+            securityLevel: 'loose',
+            fontFamily: 'Be Vietnam Pro',
+        });
 
-        window.addEventListener('load', renderGraph);
-
-        // 4. GSAP Particles Engine (Giữ nguyên Visual)
+        // 4. GSAP Particles Engine (Phân hệ 1 - Background Hero)
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
-        let width, height, particles = [];
+        let width, height;
+        let particles = [];
+        const particleCount = 80;
         
         function resize() {
             width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width; canvas.height = height;
+            height = window.innerHeight; // Giới hạn GSAP canvas trong màn đầu tiên
+            canvas.width = width;
+            canvas.height = height;
         }
+
         window.addEventListener('resize', resize);
         resize();
 
         class Particle {
-            constructor() {
+            constructor() { this.init(); }
+            init() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
                 this.radius = Math.random() * 2 + 0.5;
-                this.alpha = Math.random() * 0.4 + 0.1;
-                this.animX = this.x; this.animY = this.y;
+                this.alpha = Math.random() * 0.5 + 0.1;
+                this.animX = this.x;
+                this.animY = this.y;
             }
             draw() {
                 ctx.beginPath();
@@ -223,21 +1160,437 @@ graph TD
             }
         }
 
-        for (let i = 0; i < 50; i++) particles.push(new Particle());
+        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
 
-        particles.forEach(p => {
-            gsap.to(p, {
-                animX: `+=${gsap.utils.random(-80, 80)}`,
-                animY: `+=${gsap.utils.random(-80, 80)}`,
-                duration: gsap.utils.random(4, 8),
-                repeat: -1, yoyo: true, ease: "sine.inOut"
+        function animateParticles() {
+            particles.forEach(p => {
+                const centerX = width / 2;
+                const centerY = height / 2;
+                gsap.to(p, {
+                    animX: centerX + (Math.random() - 0.5) * 150,
+                    animY: centerY + (Math.random() - 0.5) * 150,
+                    duration: gsap.utils.random(5, 12),
+                    ease: "sine.inOut",
+                    repeat: -1,
+                    yoyo: true,
+                    delay: gsap.utils.random(0, 5)
+                });
+            });
+        }
+        animateParticles();
+
+        gsap.ticker.add(() => {
+            ctx.clearRect(0, 0, width, height); 
+            const centerX = width / 2;
+            const centerY = height / 2;
+            particles.forEach(p => {
+                p.draw();
+                const dist = Math.hypot(centerX - p.animX, centerY - p.animY);
+                if (dist < 400) { 
+                    ctx.beginPath();
+                    ctx.moveTo(p.animX, p.animY);
+                    ctx.lineTo(centerX, centerY);
+                    ctx.strokeStyle = `rgba(139, 92, 246, ${0.12 - dist/400*0.12})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
             });
         });
 
-        gsap.ticker.add(() => {
-            ctx.clearRect(0, 0, width, height);
-            particles.forEach(p => p.draw());
+        // ==========================================
+        // Logic D3.js: Hub & Spoke vs Data Mesh
+        // ==========================================
+        const drawNetwork = (selector, type) => {
+            const width = document.querySelector(selector).clientWidth;
+            const height = 300;
+            const svg = d3.select(selector).append("svg").attr("width", width).attr("height", height);
+
+            const nodes = [];
+            const links = [];
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            if (type === 'hub') {
+                // Hub & Spoke: 1 tâm, nhiều node viền
+                nodes.push({ id: 'Center', x: centerX, y: centerY, r: 25, color: '#0a0a0a' }); // CSDL Tập trung
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    nodes.push({ id: `N${i}`, x: centerX + 100 * Math.cos(angle), y: centerY + 100 * Math.sin(angle), r: 10, color: '#1f2937' });
+                    links.push({ source: nodes[i+1], target: nodes[0] });
+                }
+            } else {
+                // Data Mesh (VNeIN): Trục điều phối giữa, các CSDL độc lập, kết nối ngang hàng
+                nodes.push({ id: 'VNeIN', x: centerX, y: centerY, r: 20, color: '#2e1065', isHub: true });
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2;
+                    nodes.push({ id: `DB${i}`, x: centerX + 100 * Math.cos(angle), y: centerY + 100 * Math.sin(angle), r: 12, color: '#1f2937' });
+                    links.push({ source: nodes[i+1], target: nodes[0] }); // Trục liên thông chỉ định tuyến
+                }
+                // Các node tự giao tiếp nếu cần (Mesh)
+                links.push({ source: nodes[1], target: nodes[2] });
+                links.push({ source: nodes[4], target: nodes[5] });
+            }
+
+            const link = svg.append("g").attr("class", "links").selectAll("line").data(links).enter().append("line")
+                .attr("class", "link active") // active để có hiệu ứng đứt đoạn chạy
+                .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+            const node = svg.append("g").attr("class", "nodes").selectAll("g").data(nodes).enter().append("g")
+                .attr("transform", d => `translate(${d.x},${d.y})`)
+                .attr("class", d => d.id === 'Center' ? 'node center-node' : 'node');
+
+            node.append("circle").attr("r", d => d.r).style("fill", d => d.color);
+            node.append("text").attr("dy", 3).attr("dx", 15).text(d => d.id);
+            
+            return { svg, nodes, links, nodeGroup: node, linkGroup: link };
+        };
+
+        // Render khi DOM ready
+        setTimeout(() => {
+            const netHub = drawNetwork('#d3-hub-spoke', 'hub');
+            const netMesh = drawNetwork('#d3-data-mesh', 'mesh');
+
+            // Xử lý nút Mô phỏng tắc nghẽn
+            document.getElementById('btn-simulate-bottleneck').addEventListener('click', function() {
+                const btn = this;
+                btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Đang tải dữ liệu 10,000 RPS...';
+                
+                setTimeout(() => {
+                    // Hub bị tắc nghẽn (đỏ lên)
+                    netHub.nodeGroup.filter(d => d.id === 'Center').classed('bottleneck', true);
+                    netHub.linkGroup.classed('bottleneck', true).classed('active', false);
+                    
+                    // VNeIN Hub vẫn bình thường
+                    btn.innerHTML = '<i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i> Hub truyền thống sập - VNeIN vẫn ổn định';
+                    btn.classList.replace('from-violet-600', 'from-red-900');
+                    btn.classList.replace('to-fuchsia-600', 'to-red-600');
+                    lucide.createIcons();
+                }, 1500);
+            });
+        }, 500); // Đợi layout tính toán xong kích thước
+
+
+        // ==========================================
+        // Logic Phân hệ 5: Mô phỏng Validate QCVN 09
+        // ==========================================
+        document.getElementById('btn-validate').addEventListener('click', function() {
+            const term = document.getElementById('validation-terminal');
+            const err = term.querySelector('.error-log');
+            const loader = term.querySelector('.animate-spin').parentNode;
+            const codeBlock = document.getElementById('payload-code');
+            
+            // Hiện terminal
+            term.classList.remove('hidden');
+            err.classList.add('hidden');
+            loader.classList.remove('hidden');
+            
+            // Xoá highlight cũ (nếu có)
+            codeBlock.innerHTML = codeBlock.innerHTML.replace('<span class="bg-red-500/30 border-b border-red-500">', '').replace('</span>', '');
+
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                err.classList.remove('hidden');
+                
+                // Highlight lỗi trực tiếp vào thẻ code của Prism
+                let codeHTML = codeBlock.innerHTML;
+                const targetString = '"2026-04-09T18:01:00Z"';
+                codeHTML = codeHTML.replace(targetString, `<span class="bg-red-500/30 border-b border-red-500 text-white px-1 relative group cursor-pointer">${targetString}<span class="absolute -top-6 left-0 bg-red-600 text-[10px] px-2 py-1 rounded shadow-lg hidden group-hover:block whitespace-nowrap">Thiếu Milliseconds (.SSS)</span></span>`);
+                codeBlock.innerHTML = codeHTML;
+            }, 1200);
         });
+
+        // ==========================================
+        // Logic Phân hệ 6: Native Super App Mockup (Đã nâng cấp)
+        // ==========================================
+        const btnLogin = document.getElementById('btn-login');
+        const btnLogout = document.getElementById('btn-logout');
+        const appLogin = document.getElementById('app-login');
+        const appDashboard = document.getElementById('app-dashboard');
+        
+        // 1. Luồng Login
+        if (btnLogin) {
+            btnLogin.addEventListener('click', () => {
+                btnLogin.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Đang đồng bộ SSO...';
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    appLogin.style.opacity = '0';
+                    appLogin.style.pointerEvents = 'none';
+                    setTimeout(() => {
+                        appDashboard.style.opacity = '1';
+                        appDashboard.style.pointerEvents = 'auto';
+                    }, 300);
+                }, 800);
+            });
+        }
+
+        // 2. Luồng Điều hướng Tab (Bottom Navigation)
+        const navItems = document.querySelectorAll('.nav-item');
+        const tabs = {
+            'tab-home': document.getElementById('tab-home'),
+            'tab-policies': document.getElementById('tab-policies'),
+            'tab-claims': document.getElementById('tab-claims'),
+            'tab-profile': document.getElementById('tab-profile')
+        };
+
+        const switchTab = (targetId) => {
+            navItems.forEach(item => {
+                const icon = item.querySelector('.icon-nav');
+                const text = item.querySelector('.text-nav');
+                if(item.dataset.target === targetId) {
+                    icon.classList.remove('text-gray-500');
+                    icon.classList.add('text-violet-400', 'fill-violet-500/20');
+                    text.classList.remove('text-gray-500', 'font-medium');
+                    text.classList.add('text-violet-400', 'font-bold');
+                } else {
+                    icon.classList.add('text-gray-500');
+                    icon.classList.remove('text-violet-400', 'fill-violet-500/20');
+                    text.classList.add('text-gray-500', 'font-medium');
+                    text.classList.remove('text-violet-400', 'font-bold');
+                }
+            });
+
+            Object.keys(tabs).forEach(key => {
+                if(key === targetId) {
+                    tabs[key].classList.remove('opacity-0', 'pointer-events-none', 'z-0');
+                    tabs[key].classList.add('opacity-100', 'z-10');
+                } else {
+                    tabs[key].classList.add('opacity-0', 'pointer-events-none', 'z-0');
+                    tabs[key].classList.remove('opacity-100', 'z-10');
+                }
+            });
+        };
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => switchTab(item.dataset.target));
+        });
+
+        // 3. Luồng Điều hướng Sub-screens & Nút Back
+        const btnOpenMap = document.getElementById('btn-open-map');
+        const btnOpenBuy = document.getElementById('btn-open-buy');
+        const btnQuickClaim = document.getElementById('btn-quick-claim');
+        
+        const subMap = document.getElementById('sub-map');
+        const subBuy = document.getElementById('sub-buy');
+        const btnCloseSubs = document.querySelectorAll('.btn-close-sub');
+
+        if (btnOpenMap) btnOpenMap.addEventListener('click', () => subMap.classList.remove('translate-x-full'));
+        if (btnOpenBuy) btnOpenBuy.addEventListener('click', () => subBuy.classList.remove('translate-x-full'));
+        
+        // Nhảy sang Tab Bồi thường từ Trang chủ
+        if (btnQuickClaim) btnQuickClaim.addEventListener('click', () => switchTab('tab-claims'));
+
+        // Đóng các Sub-screen (Nút Back)
+        btnCloseSubs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                subMap.classList.add('translate-x-full');
+                subBuy.classList.add('translate-x-full');
+            });
+        });
+
+        // 4. Luồng Đăng xuất (Vòng lặp khép kín UX)
+        if (btnLogout) {
+            btnLogout.addEventListener('click', () => {
+                // Fade out app dashboard
+                appDashboard.style.opacity = '0';
+                appDashboard.style.pointerEvents = 'none';
+                
+                // Trả các màn hình phụ về vị trí ẩn
+                subMap.classList.add('translate-x-full');
+                subBuy.classList.add('translate-x-full');
+                
+                // Đóng bottom sheet nếu vô tình đang mở
+                if (typeof closeSheet === 'function') closeSheet();
+                
+                // Reset về Tab Trang chủ
+                switchTab('tab-home');
+
+                setTimeout(() => {
+                    // Fade in lại màn SSO
+                    appLogin.style.opacity = '1';
+                    appLogin.style.pointerEvents = 'auto';
+                    
+                    // Phục hồi giao diện nút đăng nhập gốc
+                    btnLogin.innerHTML = '<i data-lucide="fingerprint" class="w-5 h-5"></i> Đăng nhập SSO';
+                    lucide.createIcons();
+                }, 400);
+            });
+        }
+
+        // ==========================================
+        // Logic Phân hệ 7: Quản trị Đồng thuận (Modal)
+        // ==========================================
+        const btnTriggerConsent = document.getElementById('btn-trigger-consent');
+        const consentModal = document.getElementById('consent-modal');
+        const modalBox = document.getElementById('consent-modal-box');
+        const btnDeny = document.getElementById('btn-deny');
+        const btnAccept = document.getElementById('btn-accept');
+        const tokenResult = document.getElementById('token-result');
+
+        const openModal = () => {
+            consentModal.classList.remove('opacity-0', 'pointer-events-none');
+            modalBox.classList.remove('scale-95');
+            modalBox.classList.add('scale-100');
+        };
+
+        const closeModal = () => {
+            consentModal.classList.add('opacity-0', 'pointer-events-none');
+            modalBox.classList.remove('scale-100');
+            modalBox.classList.add('scale-95');
+        };
+
+        if(btnTriggerConsent) {
+            btnTriggerConsent.addEventListener('click', openModal);
+        }
+        if(btnDeny) {
+            btnDeny.addEventListener('click', closeModal);
+        }
+        if(btnAccept) {
+            btnAccept.addEventListener('click', () => {
+                const originalText = btnAccept.innerHTML;
+                btnAccept.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Đang ký số...';
+                lucide.createIcons();
+                
+                // Giả lập thời gian xử lý API
+                setTimeout(() => {
+                    closeModal();
+                    btnAccept.innerHTML = originalText; // Reset nút
+                    tokenResult.classList.remove('hidden'); // Hiện khung token
+                }, 1500);
+            });
+        }
+
+        // ==========================================
+        // Phân hệ 8: D3.js - Zero-Trust Network
+        // ==========================================
+        const drawZeroTrust = () => {
+            const container = document.querySelector('#d3-zero-trust');
+            const width = container.clientWidth;
+            const height = 400;
+            const svg = d3.select('#d3-zero-trust').append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
+
+            // Cấu hình các Node: 0 là Hub, 1-3 là DB an toàn, 4 là Node bị hack
+            const nodes = [
+                { id: 'VNeIN Core', x: width/2, y: height/2, r: 25, color: '#2e1065', type: 'core' },
+                { id: 'Auth Service', x: width/2 - 120, y: height/2 - 80, r: 15, color: '#4c1d95', type: 'safe' },
+                { id: 'Log Service', x: width/2 + 120, y: height/2 - 80, r: 15, color: '#4c1d95', type: 'safe' },
+                { id: 'API Gateway', x: width/2, y: height/2 + 100, r: 18, color: '#4c1d95', type: 'safe' },
+                { id: 'Partner Node (Compromised)', x: width/2 + 150, y: height/2 + 80, r: 15, color: '#4c1d95', type: 'hacked' }
+            ];
+
+            const links = [
+                { source: nodes[1], target: nodes[0], status: 'active' },
+                { source: nodes[2], target: nodes[0], status: 'active' },
+                { source: nodes[3], target: nodes[0], status: 'active' },
+                { source: nodes[4], target: nodes[0], status: 'normal' } // Sẽ bị block khi mô phỏng
+            ];
+
+            const link = svg.append("g").selectAll("line").data(links).enter().append("line")
+                .attr("class", d => d.status === 'active' ? 'link active' : 'link')
+                .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+            const node = svg.append("g").selectAll("g").data(nodes).enter().append("g")
+                .attr("transform", d => `translate(${d.x},${d.y})`)
+                .attr("class", d => d.type === 'core' ? 'node center-node' : 'node')
+                .attr("id", d => `zt-node-${d.index}`);
+
+            node.append("circle").attr("r", d => d.r).style("fill", d => d.color);
+            node.append("text").attr("dy", d => d.r + 15).attr("text-anchor", "middle").text(d => d.id);
+
+            return { svg, nodes, links, nodeGroup: node, linkGroup: link };
+        };
+
+        // ==========================================
+        // Phân hệ 9: D3.js - Fraud Knowledge Graph
+        // ==========================================
+        const drawKnowledgeGraph = () => {
+            const container = document.querySelector('#d3-knowledge-graph');
+            const width = container.clientWidth;
+            const height = 350;
+            const svg = d3.select('#d3-knowledge-graph').append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
+
+            // Cấu hình: Các cụm dữ liệu phân tán. Cụm dị thường: 2 người cùng claim 1 xe tại 1 bệnh viện.
+            const nodes = [
+                { id: 'BV Tâm Anh', x: width/2, y: height/2 - 50, r: 20, color: '#1f2937', type: 'hospital' },
+                { id: 'Xe 30A-123.45', x: width/2, y: height/2 + 80, r: 15, color: '#1f2937', type: 'car' },
+                { id: 'NV_A (Chủ xe)', x: width/2 - 100, y: height/2 + 20, r: 12, color: '#0a0a0a', type: 'person', fraud: true },
+                { id: 'NV_B (Tài xế)', x: width/2 + 100, y: height/2 + 20, r: 12, color: '#0a0a0a', type: 'person', fraud: true },
+                // Nhiễu
+                { id: 'BV Chợ Rẫy', x: width/2 - 200, y: height/2 - 80, r: 15, color: '#1f2937' },
+                { id: 'NV_C', x: width/2 - 180, y: height/2 + 50, r: 10, color: '#0a0a0a' },
+                { id: 'Xe 51F', x: width/2 + 200, y: height/2 - 30, r: 12, color: '#1f2937' },
+            ];
+
+            const links = [
+                { source: nodes[2], target: nodes[0], isFraud: true }, // A khám Tâm Anh
+                { source: nodes[3], target: nodes[0], isFraud: true }, // B cũng khám Tâm Anh (cùng vụ)
+                { source: nodes[2], target: nodes[1], isFraud: true }, // A sở hữu xe
+                { source: nodes[3], target: nodes[1], isFraud: true }, // B lái xe đó
+                // Nhiễu
+                { source: nodes[5], target: nodes[4] },
+                { source: nodes[6], target: nodes[3] }
+            ];
+
+            const link = svg.append("g").selectAll("line").data(links).enter().append("line")
+                .attr("class", "link")
+                .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+            const node = svg.append("g").selectAll("g").data(nodes).enter().append("g")
+                .attr("transform", d => `translate(${d.x},${d.y})`)
+                .attr("class", "node");
+
+            node.append("circle").attr("r", d => d.r).style("fill", d => d.color);
+            node.append("text").attr("dy", d => d.r + 15).attr("text-anchor", "middle").text(d => d.id);
+
+            return { svg, nodes, links, nodeGroup: node, linkGroup: link };
+        };
+
+        // Render khi layout hoàn thiện
+        setTimeout(() => {
+            const ztNet = drawZeroTrust();
+            const kgNet = drawKnowledgeGraph();
+
+            // Nút Mô phỏng tấn công Zero-Trust
+            document.getElementById('btn-simulate-attack').addEventListener('click', function() {
+                const btn = this;
+                btn.innerHTML = '<i data-lucide="shield-alert" class="w-4 h-4"></i> Đang phong tỏa...';
+                
+                // Kích hoạt trạng thái Hacked
+                ztNet.nodeGroup.filter(d => d.type === 'hacked').classed('hacked', true);
+                
+                // Thay đổi link thành Blocked
+                ztNet.linkGroup.filter(d => d.source.type === 'hacked').classed('blocked', true).classed('active', false);
+                
+                setTimeout(() => {
+                    btn.innerHTML = 'Kết nối bị từ chối (Thiếu mTLS)';
+                    btn.classList.add('cursor-not-allowed', 'opacity-80');
+                    lucide.createIcons();
+                }, 800);
+            });
+
+            // Nút Quét dị thường Knowledge Graph
+            document.getElementById('btn-detect-fraud').addEventListener('click', function() {
+                const btn = this;
+                btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Đang chạy thuật toán Graph...';
+                
+                setTimeout(() => {
+                    // Highlight các node nghi ngờ trục lợi
+                    kgNet.nodeGroup.filter(d => d.fraud || d.type === 'hospital' || d.type === 'car').classed('fraud', true);
+                    kgNet.linkGroup.filter(d => d.isFraud).classed('fraud-link', true);
+                    
+                    btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Đã cô lập vòng lặp trục lợi';
+                    btn.classList.replace('bg-fuchsia-600/20', 'bg-green-900/50');
+                    btn.classList.replace('text-fuchsia-300', 'text-green-400');
+                    btn.classList.replace('border-fuchsia-500/50', 'border-green-500/50');
+                    lucide.createIcons();
+                }, 1500);
+            });
+
+            lucide.createIcons();
+        }, 800);
     </script>
 </body>
 </html>
